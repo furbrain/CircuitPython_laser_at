@@ -2,13 +2,6 @@ Introduction
 ============
 
 
-
-
-.. image:: https://img.shields.io/discord/327254708534116352.svg
-    :target: https://adafru.it/discord
-    :alt: Discord
-
-
 .. image:: https://github.com/furbrain/CircuitPython_laser_at/workflows/Build%20CI/badge.svg
     :target: https://github.com/furbrain/CircuitPython_laser_at/actions
     :alt: Build Status
@@ -18,7 +11,8 @@ Introduction
     :target: https://github.com/psf/black
     :alt: Code Style: Black
 
-Driver for an inexpensive laser rangefinder module, made by AT, available on aliexpress.
+Driver for an inexpensive laser rangefinder module, made by Hi-AT, available on `aliexpress
+<https://www.aliexpress.com/item/32792768667.html>`_
 
 
 Dependencies
@@ -31,12 +25,10 @@ Please ensure all dependencies are available on the CircuitPython filesystem.
 This is easily achieved by downloading
 `the Adafruit library and driver bundle <https://circuitpython.org/libraries>`_
 or individual libraries can be installed using
-`circup <https://github.com/adafruit/circup>`_.Installing from PyPI
-=====================
-.. note:: This library is not available on PyPI yet. Install documentation is included
-   as a standard element. Stay tuned for PyPI availability!
+`circup <https://github.com/adafruit/circup>`_.
 
-.. todo:: Remove the above note if PyPI version is/will be available at time of release.
+Installing from PyPI
+=====================
 
 On supported GNU/Linux systems like the Raspberry Pi, you can install the driver locally `from
 PyPI <https://pypi.org/project/circuitpython-laser-at/>`_.

@@ -1,4 +1,3 @@
-# SPDX-FileCopyrightText: 2017 Scott Shawcroft, written for Adafruit Industries
 # SPDX-FileCopyrightText: Copyright (c) 2022 Phil Underwood for Underwood Underground
 #
 # SPDX-License-Identifier: MIT
@@ -17,21 +16,119 @@ Implementation Notes
 **Hardware:**
 
 .. todo:: Add links to any specific hardware product page(s), or category page(s).
-  Use unordered list & hyperlink rST inline format: "* `Link Text <url>`_"
+  * `Hi-AT laser range finder <https://www.aliexpress.com/item/32792768667.html>`_
 
 **Software and Dependencies:**
 
 * Adafruit CircuitPython firmware for the supported boards:
   https://circuitpython.org/downloads
 
-.. todo:: Uncomment or remove the Bus Device and/or the Register library dependencies
-  based on the library's use of either.
-
-# * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
-# * Adafruit's Register library: https://github.com/adafruit/Adafruit_CircuitPython_Register
 """
+import re
+import time
 
-# imports
+try:
+    from typing import Optional
+except ImportError:
+    pass
+
+import busio
 
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/furbrain/CircuitPython_laser_at.git"
+
+
+class LaserError(Exception):
+    """
+    An error while reading from the laser
+    """
+
+
+class LaserTimeoutError(LaserError):
+    """
+    Laser read has timed out
+    """
+
+
+class Laser:
+    """
+    Driver for low cost laser range finder by Hi-AT.
+
+    :param ~busio.UART uart: The I2C bus the LSM6DS3 is connected to.
+    :param speed: The speed at which to take a measurement. Choices are `Laser.FAST`,
+      `Laser.Medium`, and `Laser.SLOW`
+    """
+
+    FAST = b"F"
+    MEDIUM = b"D"
+    SLOW = b"M"
+
+    DEFAULT_SPEEDS = {FAST: 1000, MEDIUM: 3000, SLOW: 6000}
+
+    def __init__(self, uart: busio.UART, speed: bytes = MEDIUM):
+        self.uart: busio.UART = uart
+        self.speed = speed
+        self._on = False
+
+    def _clear_buffer(self):
+        self.uart.reset_input_buffer()
+
+    def start_measurement(self):
+        """
+        Start a measurement with the laser
+
+        :param bytes speed: one of ``Laser.FAST|MEDIUM|SLOW``. Default is slow
+        """
+        self._clear_buffer()
+        self.uart.write(self.speed)
+
+    def read_measurement(self, timeout: Optional[int] = None) -> float:
+        """
+        Retrieve a reading form the laser
+        :param int timeout: How long to wait for a reading in millisecond. Default depends on
+          `Laser.speed`: 1000 for FAST, 3000 for MEDIUM, 6000 for SLOW.
+        :return: Distance in metres
+        """
+        self._on = False
+        if timeout is None:
+            timeout = self.DEFAULT_SPEEDS[self.speed]
+        expired = time.monotonic() + timeout / 1000.0
+        while self.uart.in_waiting < 9:
+            time.sleep(0.01)
+            if time.monotonic() > expired:
+                raise LaserTimeoutError(
+                    f"Timed out: {self.uart.read(self.uart.in_waiting)}"
+                )
+        output = self.uart.read(self.uart.in_waiting)
+        print(f"output: {output}")
+        match = re.search(rb"\d+\.\d+", output)
+        if match is None:
+            raise LaserError(f"Laser read failed: {output}")
+        return float(match.group(0))
+
+    @property
+    def distance(self):
+        """
+        Distance as measured by the device
+        :return: Distance in cm
+        """
+        self.start_measurement()
+        return self.read_measurement() * 100.0
+
+    # pylint: disable=invalid-name
+    @property
+    def on(self):
+        """
+        Whether the laser is currently on or not. You can turn the laser on or off by assigning to
+        this property
+        """
+        return self._on
+
+    # pylint: disable=invalid-name
+    @on.setter
+    def on(self, value: bool):
+        self._on = value
+        if value:
+            self.uart.write(b"O")
+        else:
+            self.uart.write(b"C")
