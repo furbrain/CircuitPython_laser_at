@@ -75,8 +75,6 @@ class Laser:
     def start_measurement(self):
         """
         Start a measurement with the laser
-
-        :param bytes speed: one of ``Laser.FAST|MEDIUM|SLOW``. Default is slow
         """
         self._clear_buffer()
         self.uart.write(self.speed)
