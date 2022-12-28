@@ -79,8 +79,14 @@ Or the following command to update an existing version:
 Usage Example
 =============
 
-.. todo:: Add a quick, simple example. It and other examples should live in the
-examples folder and be included in docs/examples.rst.
+.. code-block:: python3
+
+    from board import UART
+    from laser_at import Laser
+    uart = UART()
+    uart.baudrate = 19200
+    laser = Laser(uart)
+    print(f"Distance is {laser.distance}")
 
 Documentation
 =============

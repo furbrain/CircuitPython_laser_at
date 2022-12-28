@@ -5,7 +5,7 @@
 `laser_at`
 ================================================================================
 
-Driver for an inexpensive laser rangefinder module, made by AT, available on aliexpress.
+Driver for an inexpensive laser rangefinder module, made by Hi-AT, available on aliexpress.
 
 
 * Author(s): Phil Underwood
@@ -15,7 +15,6 @@ Implementation Notes
 
 **Hardware:**
 
-.. todo:: Add links to any specific hardware product page(s), or category page(s).
   * `Hi-AT laser range finder <https://www.aliexpress.com/item/32792768667.html>`_
 
 **Software and Dependencies:**
@@ -55,8 +54,8 @@ class Laser:
     Driver for low cost laser range finder by Hi-AT.
 
     :param ~busio.UART uart: The I2C bus the LSM6DS3 is connected to.
-    :param speed: The speed at which to take a measurement. Choices are `Laser.FAST`,
-      `Laser.Medium`, and `Laser.SLOW`
+    :param speed: The speed at which to take a measurement. Choices are ``Laser.FAST``,
+      ``Laser.MEDIUM``, and ``Laser.SLOW``
     """
 
     FAST = b"F"
@@ -85,8 +84,9 @@ class Laser:
     def read_measurement(self, timeout: Optional[int] = None) -> float:
         """
         Retrieve a reading form the laser
+
         :param int timeout: How long to wait for a reading in millisecond. Default depends on
-          `Laser.speed`: 1000 for FAST, 3000 for MEDIUM, 6000 for SLOW.
+          ``speed``: 1000 for FAST, 3000 for MEDIUM, 6000 for SLOW.
         :return: Distance in metres
         """
         self._on = False
