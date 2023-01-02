@@ -78,6 +78,7 @@ class Laser:
         """
         self._clear_buffer()
         self.uart.write(self.speed)
+        self._on = True
 
     def read_measurement(self, timeout: Optional[int] = None) -> float:
         """
@@ -85,6 +86,7 @@ class Laser:
 
         :param int timeout: How long to wait for a reading in millisecond. Default depends on
           ``speed``: 1000 for FAST, 3000 for MEDIUM, 6000 for SLOW.
+        :raises: `LaserError` if a bad reading is done, `LaserTimeoutError` if the reading times out
         :return: Distance in metres
         """
         self._on = False
@@ -98,7 +100,6 @@ class Laser:
                     f"Timed out: {self.uart.read(self.uart.in_waiting)}"
                 )
         output = self.uart.read(self.uart.in_waiting)
-        print(f"output: {output}")
         match = re.search(rb"\d+\.\d+", output)
         if match is None:
             raise LaserError(f"Laser read failed: {output}")
@@ -108,6 +109,8 @@ class Laser:
     def distance(self):
         """
         Distance as measured by the device
+
+        :raises: `LaserError` if a bad reading is done, `LaserTimeoutError` if the reading times out
         :return: Distance in cm
         """
         self.start_measurement()
@@ -130,3 +133,34 @@ class Laser:
             self.uart.write(b"O")
         else:
             self.uart.write(b"C")
+
+    async def async_read(self, timeout=None):
+        """
+        Make an asynchronous laser reading
+
+        :param int timeout: How long to wait for a reading in millisecond. Default depends on
+          ``speed``: 1000 for FAST, 3000 for MEDIUM, 6000 for SLOW.
+        :raises: `LaserError` if a bad reading is done, `LaserTimeoutError` if the reading times out
+        :return: Distance in metres
+        """
+        # pylint: disable=import-outside-toplevel
+        import asyncio
+
+        self.start_measurement()
+        old_timeout = self.uart.timeout
+        self.uart.timeout = 0
+        stream = asyncio.StreamReader(self.uart)
+        if timeout is None:
+            timeout = self.DEFAULT_SPEEDS[self.speed]
+
+        try:
+            # pylint: disable=no-member
+            output = await asyncio.wait_for_ms(stream.readexactly(9), timeout)
+        except asyncio.TimeoutError as exc:
+            raise LaserTimeoutError("Timed out") from exc
+        finally:
+            self.uart.timeout = old_timeout
+        match = re.search(rb"\d+\.\d+", output)
+        if match is None:
+            raise LaserError(f"Laser read failed: {output}")
+        return float(match.group(0))
